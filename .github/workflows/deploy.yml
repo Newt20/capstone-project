@@ -35,11 +35,6 @@ jobs:
     env:
       ENV_NAME: ${{ inputs.env_name }}
       IMAGE_TARGET: ${{ inputs.image_target }}
-      # Real GitHub run: ghcr.io/<owner>. Local demo run (act): set the
-      # IMAGE_PREFIX repo/org variable (or `act --var IMAGE_PREFIX=...`) to
-      # point at the local registry instead - nothing else in this file
-      # changes.
-      IMAGE_PREFIX: ${{ vars.IMAGE_PREFIX || format('ghcr.io/{0}', github.repository_owner) }}
       # Build-time backend URLs baked into the frontend's production bundle.
       # Configure these as repo variables per environment; sane localhost
       # defaults are used if unset so the pipeline still runs out of the box.
@@ -55,6 +50,22 @@ jobs:
       - name: Compute short SHA
         id: vars
         run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve image prefix
+        # Real GitHub run: ghcr.io/<owner-lowercased>. Local demo run (act):
+        # set the IMAGE_PREFIX repo/org variable (or `act --var
+        # IMAGE_PREFIX=...`) to point at the local registry instead -
+        # nothing else in this file changes. Computed in a shell step (not
+        # the static env: block above) because OCI repository paths must be
+        # all-lowercase but github.repository_owner preserves the account's
+        # actual case, and GitHub Actions expressions have no lower() function.
+        run: |
+          if [ -n "${{ vars.IMAGE_PREFIX }}" ]; then
+            echo "IMAGE_PREFIX=${{ vars.IMAGE_PREFIX }}" >> "$GITHUB_ENV"
+          else
+            owner_lower=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+            echo "IMAGE_PREFIX=ghcr.io/${owner_lower}" >> "$GITHUB_ENV"
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
