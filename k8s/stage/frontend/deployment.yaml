@@ -25,7 +25,7 @@ spec:
           # after each manual dispatch. Placeholder until the first deploy.
           # Same nginx/static production build as prod - only the backend
           # URL baked in at image build time differs.
-          image: ghcr.io/Newt20/support-chat-frontend:stage-4cf6966
+          image: ghcr.io/newt20/support-chat-frontend:stage-0d11c2f
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
