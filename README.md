@@ -31,3 +31,4 @@ for `VITE_API_URL_DEV`/`VITE_API_URL_STAGE`/`VITE_API_URL_PROD` and their
 to `http://localhost:5000` otherwise), and give Actions write permission
 under Settings → Actions → General → Workflow permissions (needed to push
 image-tag commits to `main` and push images to GHCR).
+
