@@ -25,7 +25,7 @@ spec:
         - name: backend
           # Bumped in-place by the cd-stage pipeline (sed on this line)
           # after each manual dispatch. Placeholder until the first deploy.
-          image: ghcr.io/OWNER/support-chat-backend:stage-init
+          image: localhost:5001/support-chat-backend:stage-4cf6966
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000

@@ -25,7 +25,7 @@ spec:
           # after each manual dispatch. Placeholder until the first deploy.
           # Same nginx/static production build as prod - only the backend
           # URL baked in at image build time differs.
-          image: ghcr.io/OWNER/support-chat-frontend:stage-init
+          image: localhost:5001/support-chat-frontend:stage-4cf6966
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
