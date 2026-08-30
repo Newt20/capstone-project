@@ -27,7 +27,7 @@ spec:
         - name: backend
           # Bumped in-place by the cd-dev pipeline (sed on this line) after
           # each manual dispatch. Placeholder until the first real deploy.
-          image: localhost:5001/support-chat-backend:dev-4cf6966
+          image: localhost:5001/support-chat-backend:dev-42a9c6c
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
