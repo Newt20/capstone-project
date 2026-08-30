@@ -6,10 +6,10 @@ metadata:
 spec:
   project: default
   source:
-    # Replace OWNER once this repo is pushed to GitHub. Argo CD always
-    # tracks `main` here, never dev/stage/prod - see understanding.md for
-    # why manifests live on a separate ledger branch from application code.
-    repoURL: https://github.com/OWNER/support-chat.git
+    # Argo CD always tracks `main` here, never dev/stage/prod - see
+    # understanding.md for why manifests live on a separate ledger branch
+    # from application code.
+    repoURL: https://github.com/Newt20/capstone-project.git
     targetRevision: main
     path: k8s/dev/frontend
   destination:

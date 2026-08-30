@@ -23,7 +23,11 @@ outside this repo).
 | stage | Manual (`workflow_dispatch` on `cd-stage.yml`) | `production` | 1 / 1 |
 | prod | Automatic (PR opened against `prod` triggers `cd-prod.yml`) | `production` | 2 / 1 |
 
-Before pushing this repo to GitHub for real, replace the `OWNER` placeholder
-in `argocd/*.yaml` and `k8s/**/deployment.yaml` image references with your
-GitHub username, and set the repo variables listed in `understanding.md`
-(`IMAGE_PREFIX`, `VITE_API_URL_*`, `VITE_SOCKET_URL_*`).
+Repo: https://github.com/Newt20/capstone-project
+
+Before the first real `cd-dev`/`cd-stage`/`cd-prod` run, set repo variables
+for `VITE_API_URL_DEV`/`VITE_API_URL_STAGE`/`VITE_API_URL_PROD` and their
+`VITE_SOCKET_URL_*` counterparts once real backend URLs exist (they default
+to `http://localhost:5000` otherwise), and give Actions write permission
+under Settings → Actions → General → Workflow permissions (needed to push
+image-tag commits to `main` and push images to GHCR).

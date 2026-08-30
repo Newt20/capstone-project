@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/OWNER/support-chat.git
+    repoURL: https://github.com/Newt20/capstone-project.git
     targetRevision: main
     path: k8s/prod/backend
   destination:

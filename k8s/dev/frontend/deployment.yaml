@@ -23,7 +23,7 @@ spec:
         - name: frontend
           # Bumped in-place by the cd-dev pipeline (sed on this line) after
           # each manual dispatch.
-          image: localhost:5001/support-chat-frontend:dev-4cf6966
+          image: ghcr.io/Newt20/support-chat-frontend:dev-4cf6966
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5173
