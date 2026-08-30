@@ -4,19 +4,18 @@ name: CI
 # This is pure validation - it never builds/pushes images and never deploys
 # anything. It's the gate that dev/stage/prod branch protection requires to
 # be green before a merge is allowed.
+#
+# Deliberately NOT path-filtered: frontend-ci/backend-ci are required status
+# checks on dev/stage/prod, so any PR whose diff doesn't happen to touch
+# frontend/**, backend/**, or .github/workflows/** would never get a status
+# reported and would be stuck "waiting" forever (hit this for real with a
+# .gitignore-only change). Always running both jobs costs a bit of runner
+# time but is the only way a required check reliably resolves for every PR.
 on:
   push:
     branches: [dev, stage, prod]
-    paths:
-      - "frontend/**"
-      - "backend/**"
-      - ".github/workflows/**"
   pull_request:
     branches: [dev, stage, prod]
-    paths:
-      - "frontend/**"
-      - "backend/**"
-      - ".github/workflows/**"
   # Also invoked directly by deploy.yml so every CD run re-validates the
   # exact commit it's about to build, without duplicating these steps.
   workflow_call:
