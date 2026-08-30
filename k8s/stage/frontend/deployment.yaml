@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-stage
+  namespace: support-chat-stage
+  labels:
+    app: support-chat
+    component: frontend
+    env: stage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: frontend
+      env: stage
+  template:
+    metadata:
+      labels:
+        component: frontend
+        env: stage
+    spec:
+      containers:
+        - name: frontend
+          # Bumped in-place by the cd-stage pipeline (sed on this line)
+          # after each manual dispatch. Placeholder until the first deploy.
+          # Same nginx/static production build as prod - only the backend
+          # URL baked in at image build time differs.
+          image: ghcr.io/OWNER/support-chat-frontend:stage-init
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

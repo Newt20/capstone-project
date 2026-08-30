@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-prod
+  namespace: support-chat-prod
+  labels:
+    app: support-chat
+    component: backend
+    env: prod
+spec:
+  # Single instance only - see k8s/dev/backend/deployment.yaml for why
+  # (no Socket.IO Redis adapter in this codebase). This is the known
+  # scaling ceiling for prod until that adapter is added.
+  replicas: 1
+  selector:
+    matchLabels:
+      component: backend
+      env: prod
+  template:
+    metadata:
+      labels:
+        component: backend
+        env: prod
+    spec:
+      containers:
+        - name: backend
+          # Bumped in-place by the cd-prod pipeline (sed on this line),
+          # triggered automatically when a PR against `prod` is opened.
+          # Placeholder until the first deploy.
+          image: ghcr.io/OWNER/support-chat-backend:prod-init
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PORT
+              value: "5000"
+            - name: NODE_ENV
+              value: "production"
+            - name: CLIENT_URL
+              value: "http://localhost:5176"
+            - name: CHAT_PRIMARY_COLOR
+              value: "#2563EB"
+            - name: CHAT_HEADER_COLOR
+              value: "#2563EB"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

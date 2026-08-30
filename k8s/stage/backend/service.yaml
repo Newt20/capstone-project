@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-stage
+  namespace: support-chat-stage
+  labels:
+    app: support-chat
+    component: backend
+    env: stage
+spec:
+  type: ClusterIP
+  selector:
+    component: backend
+    env: stage
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
