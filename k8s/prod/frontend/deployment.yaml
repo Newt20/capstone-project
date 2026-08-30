@@ -26,7 +26,7 @@ spec:
           # Bumped in-place by the cd-prod pipeline (sed on this line),
           # triggered automatically when a PR against `prod` is opened.
           # Placeholder until the first deploy.
-          image: ghcr.io/Newt20/support-chat-frontend:prod-3482811
+          image: ghcr.io/newt20/support-chat-frontend:prod-0d11c2f
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
