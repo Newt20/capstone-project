@@ -22,7 +22,7 @@ spec:
       containers:
         - name: frontend
           # Bumped in-place by the cd-dev pipeline (sed on this line) after
-          # each manual dispatch. Placeholder until the first real deploy.
+          # each manual dispatch.
           image: localhost:5001/support-chat-frontend:dev-4cf6966
           imagePullPolicy: IfNotPresent
           ports:
@@ -46,8 +46,8 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 50m
-              memory: 96Mi
-            limits:
-              cpu: 250m
+              cpu: 100m
               memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
