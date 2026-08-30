@@ -1,0 +1,21 @@
+name: CD - Prod
+
+# Automatic deploy on PR open - the ONLY trigger is a pull_request event
+# targeting `prod`. There is no workflow_dispatch here and no separate
+# approval step: opening (or updating) the promotion PR is itself the one
+# human decision in this path. Once CI passes inside the reusable workflow,
+# the change is built, pushed, and live - nothing else to click.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [prod]
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      env_name: prod
+      image_target: production
+      # Build exactly what the PR proposes, not a synthetic merge commit.
+      checkout_ref: ${{ github.event.pull_request.head.sha }}
+    secrets: inherit

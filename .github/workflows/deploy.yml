@@ -1,0 +1,120 @@
+name: Deploy (reusable)
+
+# Shared deploy logic called by cd-dev.yml / cd-stage.yml / cd-prod.yml.
+# Each caller only differs in its `on:` trigger (that's where the
+# manual-vs-automatic rule actually lives) and the env_name/image_target it
+# passes in - this file has no opinion about who triggered it.
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        description: "dev | stage | prod"
+        required: true
+        type: string
+      image_target:
+        description: "Dockerfile build target: development | production"
+        required: true
+        type: string
+      checkout_ref:
+        description: "Commit/ref to build. Defaults to the triggering event's own ref/sha (branch HEAD for workflow_dispatch). The prod caller passes the PR head SHA explicitly so it builds exactly what the PR proposes, not a synthetic merge commit."
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+
+  build-and-deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    env:
+      ENV_NAME: ${{ inputs.env_name }}
+      IMAGE_TARGET: ${{ inputs.image_target }}
+      # Real GitHub run: ghcr.io/<owner>. Local demo run (act): set the
+      # IMAGE_PREFIX repo/org variable (or `act --var IMAGE_PREFIX=...`) to
+      # point at the local registry instead - nothing else in this file
+      # changes.
+      IMAGE_PREFIX: ${{ vars.IMAGE_PREFIX || format('ghcr.io/{0}', github.repository_owner) }}
+      # Build-time backend URLs baked into the frontend's production bundle.
+      # Configure these as repo variables per environment; sane localhost
+      # defaults are used if unset so the pipeline still runs out of the box.
+      VITE_API_URL: ${{ vars[format('VITE_API_URL_{0}', inputs.env_name)] || 'http://localhost:5000' }}
+      VITE_SOCKET_URL: ${{ vars[format('VITE_SOCKET_URL_{0}', inputs.env_name)] || 'http://localhost:5000' }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
+          fetch-depth: 0
+
+      - name: Compute short SHA
+        id: vars
+        run: echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: startsWith(env.IMAGE_PREFIX, 'ghcr.io')
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          target: ${{ env.IMAGE_TARGET }}
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/support-chat-frontend:${{ env.ENV_NAME }}-${{ steps.vars.outputs.sha }}
+          build-args: |
+            VITE_API_URL=${{ env.VITE_API_URL }}
+            VITE_SOCKET_URL=${{ env.VITE_SOCKET_URL }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          target: ${{ env.IMAGE_TARGET }}
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/support-chat-backend:${{ env.ENV_NAME }}-${{ steps.vars.outputs.sha }}
+
+      - name: Checkout deployment ledger (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: ledger
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Point ledger at local demo git server (optional override)
+        if: ${{ vars.LEDGER_REMOTE != '' }}
+        working-directory: ledger
+        run: git remote set-url origin "${{ vars.LEDGER_REMOTE }}"
+
+      - name: Bump image tags in k8s manifests
+        working-directory: ledger
+        run: |
+          set -euo pipefail
+          SHA="${{ steps.vars.outputs.sha }}"
+          FRONTEND_IMAGE="${IMAGE_PREFIX}/support-chat-frontend:${ENV_NAME}-${SHA}"
+          BACKEND_IMAGE="${IMAGE_PREFIX}/support-chat-backend:${ENV_NAME}-${SHA}"
+          sed -i "s#^\(\s*image:\s*\).*#\1${FRONTEND_IMAGE}#" "k8s/${ENV_NAME}/frontend/deployment.yaml"
+          sed -i "s#^\(\s*image:\s*\).*#\1${BACKEND_IMAGE}#" "k8s/${ENV_NAME}/backend/deployment.yaml"
+          git config user.name "support-chat-cd-bot"
+          git config user.email "cd-bot@users.noreply.github.com"
+          git add "k8s/${ENV_NAME}"
+          if git diff --cached --quiet; then
+            echo "No image tag changes to commit."
+          else
+            git commit -m "deploy(${ENV_NAME}): frontend@${SHA} backend@${SHA}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
